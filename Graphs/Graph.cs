@@ -146,48 +146,77 @@ namespace Graphs
             }
             return result;
         }
-        public (List<T>, float) Distance(T name1, T name2)
+        //public (List<T>, float) Distance(T name1, T name2)
+        public float Distance(T name1, T name2)
         {
             List<(T, float)> distances = new List<(T, float)>();
             List<T> visited = new List<T>();
-            List<(T, float)> unvisited = new List<(T, float)>();
-            List<(T, T)> previousNodes = new List<(T, T)>();
+            List<T> unvisited = new List<T>();
             foreach ((T name, List<(T, float)> connections) in graph)
             { 
                 if(name.Equals(name1))
                 {
                     distances.Add((name, 0));
-                    unvisited.Add((name, 0));
+                    unvisited.Add(name);
                 }
                 else
                 {
                     distances.Add((name, float.PositiveInfinity));
-                    unvisited.Add((name, float.PositiveInfinity));
+                    unvisited.Add(name);
                 }
             }
             while (visited.Count < graph.Count)
             {
-                int index = 0;
                 float minDistance = float.PositiveInfinity;
                 T current = name1;
-                for (int i = 0; i < unvisited.Count; i++) 
+                for (int i = 0; i < distances.Count; i++) 
                 {
-                    (T name, float distance) = unvisited[i];
-                    if (distance < minDistance)
+                    (T name, float distance) = distances[i];
+                    if (distance < minDistance && unvisited.Contains(name))
                     {
                         minDistance = distance;
-                        index = i;
                         current = name;
                     }
                 }
-                unvisited.RemoveAt(index);
+                unvisited.Remove(current);
                 visited.Add(current);
                 (T dump, List<(T, float)> connections) = graph[Find(current)];
                 foreach((T name, float distance) in connections)
                 {
-
+                    if (!visited.Contains(name))
+                    {
+                        float distanceTo = 0;
+                        float newDistance = 0;
+                        int index = 0;
+                        foreach ((T check, float distance2) in distances)
+                        {
+                            index++;
+                            if (check.Equals(current))
+                            {
+                                distanceTo = distance2;
+                            }
+                            else if (check.Equals(name))
+                            {
+                                newDistance = distanceTo + distance;
+                                if (newDistance < distance2)
+                                {
+                                    distances[index] = (name, newDistance);
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             }
+            float result = 0;
+            foreach ((T name, float distance) in distances)
+            {
+                if (name.Equals(name2))
+                {
+                    result = distance;
+                }
+            }
+            return result;
         }
         public List<T> BreadthFirst(T root)
         {
@@ -204,7 +233,8 @@ namespace Graphs
                 }
                 if (!exists)
                 {
-                    (List<T> route, float distance) = Distance(root, name);
+                    //(List<T> route, float distance) = Distance(root, name);
+                    float distance = Distance(root, name);
                     points.Add((name, distance));
                 }
             }
