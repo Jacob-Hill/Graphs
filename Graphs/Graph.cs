@@ -202,7 +202,7 @@ namespace Graphs
                                     distances[index] = (name, newDistance);
                                     int index2 = 0;
                                     bool exists = false;
-                                    foreach((T previous, T current2) in pairs)
+                                    foreach((_, T current2) in pairs)
                                     {
                                         if (name.Equals(current2))
                                         {
