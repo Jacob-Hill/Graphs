@@ -6,6 +6,7 @@ namespace Graphs
     class Graph<T>
     {
         List<(T, List<(T, float)>)> graph;
+        List<(T, List<(T, float)>)> unweightedGraph;
         bool Directed;
         bool Weighted;
         public Graph(bool directed, bool weighted, T name)
@@ -13,6 +14,7 @@ namespace Graphs
             Directed = directed;
             Weighted = weighted;
             graph = new List<(T, List<(T, float)>)> { (name, new List<(T, float)>()) };
+            unweightedGraph = new List<(T, List<(T, float)>)> { (name, new List<(T, float)>()) };
         }
         int Find(T name)
         {
@@ -29,6 +31,7 @@ namespace Graphs
         public void AddPoint(T name)
         {
             graph.Add((name, new List<(T, float)>()));
+            unweightedGraph.Add((name, new List<(T, float)>()));
         }
         public void AddPoint(T name, List<T> connected)
         {
@@ -38,6 +41,7 @@ namespace Graphs
                 connections.Add((connectionName, 1f));
             }
             graph.Add((name, connections));
+            unweightedGraph.Add((name, connections));
             if (!Directed)
             {
                 foreach (T connectionName in connected)
@@ -49,11 +53,14 @@ namespace Graphs
         public void AddPoint(T name, List<(T, float)> connected)
         {
             List<(T, float)> connections = new List<(T, float)>();
+            List<(T, float)> unweightedConnections = new List<(T, float)>();
             foreach ((T connectionName, float weight) in connected)
             {
                 connections.Add((connectionName, weight));
+                unweightedConnections.Add((connectionName, 1f));
             }
             graph.Add((name, connections));
+            unweightedGraph.Add((name, unweightedConnections));
             if (!Directed)
             {
                 foreach ((T connectionName, float weight) in connected)
@@ -68,6 +75,8 @@ namespace Graphs
             {
                 (_, List<(T, float)> connections) = graph[Find(name1)];
                 connections.Add((name2, 1f));
+                (_, List<(T, float)> unweightedConnections) = unweightedGraph[Find(name1)];
+                unweightedConnections.Add((name2, 1f));
             }
             if (!Directed)
             {
@@ -83,6 +92,8 @@ namespace Graphs
             {
                 (_, List<(T, float)> connections) = graph[Find(name1)];
                 connections.Add((name2, weight));
+                (_, List<(T, float)> unweightedConnections) = unweightedGraph[Find(name1)];
+                unweightedConnections.Add((name2, 1f));
             }
             if (!Directed)
             {
@@ -117,6 +128,15 @@ namespace Graphs
                         break;
                     }
                 }
+                (_, List<(T, float)> unweightedConnections) = unweightedGraph[Find(name1)];
+                foreach ((T name, float weight) in connections)
+                {
+                    if (name.Equals(name2))
+                    {
+                        unweightedConnections.Remove((name2, weight));
+                        break;
+                    }
+                }
             }
             if (!Directed)
             {
@@ -134,6 +154,7 @@ namespace Graphs
                 RemoveConnection(name, name2);
             }
             graph.Remove(graph[Find(name)]);
+            unweightedGraph.Remove(unweightedGraph[Find(name)]);
         }
         public List<T> Neighbours(T name)
         {
@@ -146,13 +167,13 @@ namespace Graphs
             }
             return result;
         }
-        (List<T>, float) Dijkstra(T name1, T name2)
+        (List<T>, float) Dijkstra(T name1, T name2, List<(T, List<(T, float)>)> Graph)
         {
             List<(T, float)> distances = new List<(T, float)>();
             List<T> visited = new List<T>();
             List<T> unvisited = new List<T>();
             List<(T, T)> pairs = new List<(T, T)>();
-            foreach ((T name, _) in graph)
+            foreach ((T name, _) in Graph)
             { 
                 if(name.Equals(name1))
                 {
@@ -165,7 +186,7 @@ namespace Graphs
                     unvisited.Add(name);
                 }
             }
-            while (visited.Count < graph.Count)
+            while (visited.Count < Graph.Count)
             {
                 float minDistance = float.PositiveInfinity;
                 T current = name1;
@@ -180,7 +201,7 @@ namespace Graphs
                 }
                 unvisited.Remove(current);
                 visited.Add(current);
-                (_, List<(T, float)> connections) = graph[Find(current)];
+                (_, List<(T, float)> connections) = Graph[Find(current)];
                 foreach((T name, float distance) in connections)
                 {
                     if (!visited.Contains(name))
@@ -259,12 +280,12 @@ namespace Graphs
         }
         public float Distance(T name1, T name2)
         {
-            (_, float distance) = Dijkstra(name1, name2);
+            (_, float distance) = Dijkstra(name1, name2, graph);
             return distance;
         }
         public List<T> ShortestRoute(T name1, T name2)
         {
-            (List<T> route, _) = Dijkstra(name1, name2);
+            (List<T> route, _) = Dijkstra(name1, name2, graph);
             return route;
         }
         public List<T> BreadthFirst(T root)
@@ -282,7 +303,7 @@ namespace Graphs
                 }
                 if (!exists)
                 {
-                    (_, float distance) = Dijkstra(root, name);
+                    (_, float distance) = Dijkstra(root, name, unweightedGraph);
                     points.Add((name, distance));
                 }
             }
